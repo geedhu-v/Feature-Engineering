@@ -1,0 +1,81 @@
+---
+title: "PROG8430-Demo-Summarize"
+author: "Peiyuan"
+date: "05/26/2023"
+output: pdf_document
+---
+NOTE: Comments are included for you to help you understand the code.                      
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This section is for the basic set up.
+```{r echo=FALSE}
+if(!is.null(dev.list())) dev.off() #checks if any graphical devices are open, if yes, close them
+cat("\014") #clearing the console and starting on a new page
+rm(list=ls()) #This line removes all objects from the workspace
+options(scipen=9)
+```
+#Loading required R packages
+tidyverse for easy data manipulation and visualization
+caret for easy machine learning workflow
+
+```{r}
+if(!require(MASS)){install.packages("MASS")}
+library(MASS)
+if(!require(ggplot2)){install.packages("ggplot2")}
+library(ggplot2)
+if(!require(devtools)){install.packages("devtools")}
+library(devtools)
+if(!require(psych)){install.packages("psych")}
+library(psych)
+```
+
+#Preparing the data
+We’ll use the iris dataset for predicting iris species based on the predictor variables Sepal.Length, Sepal.Width, Petal.Length, Petal.Width. LDA can be affected by the scale/unit in which predictor variables are measured. It’s generally recommended to standardize/normalize continuous predictor before the analysis.
+
+```{r}
+# Load the data
+attach(iris)
+str(iris)
+ggplot(iris, aes(Sepal.Length, Sepal.Width)) +  geom_point(aes(color = Species))
+
+#We will create a scatterplot for the first four numerical variables (features). 
+pairs.panels(iris[1:4],
+             gap = 0,
+             bg = c("red", "green", "blue")[iris$Species],
+             pch = 21)
+```
+
+
+##1. Split the data into training and test set:
+```{r}
+# Split the data into training (60%) and test set (40%)
+set.seed(123) #set the seed for random number generation in R
+ind <- sample(2, nrow(iris),
+              replace = TRUE,
+              prob = c(0.6, 0.4)) #randomly sampling from original data - 2 groups - training/testing
+training <- iris[ind==1,]
+testing <- iris[ind==2,]
+```
+
+##2. Compute LDA
+```{r}
+linear <- lda(Species ~., training)
+linear
+```
+##3. Make Predictions
+```{r}
+predictions <- predict(linear, testing)#apply model in the testing data.
+# Model accuracy
+mean(predictions$class==testing$Species)
+```
+
+##4. Visulize linear discrimants
+```{r}
+lda_plot <- cbind(training, predict(linear)$x)
+ggplot(lda_plot, aes(LD1, LD2)) + geom_point(aes(color = Species))
+
+```
+
+
